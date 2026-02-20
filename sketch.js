@@ -93,21 +93,6 @@ function draw() {
   push();
   translate(-cam.x, -cam.y);
 
-  // subtle world overlay so gradient shows through
-  fill(255, 20);
-  rect(0, 0, WORLD_W, WORLD_H);
-
-  // grid fades with distance
-  let gridAlpha = map(mood, 0, 1, 60, 10);
-  stroke(255, gridAlpha);
-
-  for (let x = 0; x <= WORLD_W; x += 160) {
-    line(x, 0, x, WORLD_H);
-  }
-  for (let y = 0; y <= WORLD_H; y += 160) {
-    line(0, y, WORLD_W, y);
-  }
-
   noStroke();
 
   // drifting particles

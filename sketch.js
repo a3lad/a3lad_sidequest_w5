@@ -103,12 +103,31 @@ function draw() {
     ellipse(px, py, 4);
   }
 
-  // memory fragments
-  textAlign(CENTER);
   for (let m of memories) {
     let md = dist(player.x, player.y, m.x, m.y);
-    let alpha = map(md, 300, 0, 0, 255, true);
-    fill(255, alpha);
+
+    // fade text in when near
+    let textAlpha = map(md, 300, 0, 0, 255, true);
+
+    // pulse animation
+    let pulse = sin(frameCount * 0.05) * 10;
+
+    // circle gets stronger when closer
+    let circleAlpha = map(md, 600, 0, 0, 80, true);
+
+    noFill();
+    stroke(200, 220, 255, circleAlpha);
+    strokeWeight(2);
+
+    ellipse(m.x, m.y, 60 + pulse);
+
+    // second softer outer ring
+    stroke(200, 220, 255, circleAlpha * 0.4);
+    ellipse(m.x, m.y, 120 + pulse * 1.5);
+
+    noStroke();
+    fill(255, textAlpha);
+    textAlign(CENTER);
     text(m.text, m.x, m.y);
   }
 

@@ -13,27 +13,37 @@ Goal:
 - Draw HUD in screen space (no translate)
 */
 
-let player = { x: 300, y: 300, s: 3 }; // player in WORLD coords
-let cam = { x: 0, y: 0 }; // camera top-left in WORLD coords
+let player = { x: 300, y: 300, s: 1.2 };
+let cam = { x: 0, y: 0 };
 
-// World size (we draw a world rectangle + features, but we do NOT clamp camera)
 const WORLD_W = 2400;
 const WORLD_H = 1600;
 
-// Canvas / viewport size (SCREEN coords)
 const VIEW_W = 800;
 const VIEW_H = 480;
 
+let vx = 0;
+let vy = 0;
+
+let mood = 0; // smoothed day → night value
+
+let memories = [
+  { x: 500, y: 400, text: "I remember the quiet." },
+  { x: 1200, y: 700, text: "It felt warmer then." },
+  { x: 1800, y: 300, text: "I stayed longer than I should have." },
+  { x: 2100, y: 1200, text: "Some things never return." },
+];
+
 function setup() {
   createCanvas(VIEW_W, VIEW_H);
-  textFont("sans-serif");
-  textSize(14);
+  textFont("serif");
+  textSize(18);
   noStroke();
 }
 
 function draw() {
-  // ---------- 1) UPDATE GAME STATE (WORLD) ----------
-  // Input becomes a direction vector (dx, dy)
+  // ---------- 1) UPDATE PLAYER (WORLD SPACE) ----------
+
   const dx =
     (keyIsDown(RIGHT_ARROW) || keyIsDown(68)) -
     (keyIsDown(LEFT_ARROW) || keyIsDown(65));
@@ -42,64 +52,101 @@ function draw() {
     (keyIsDown(DOWN_ARROW) || keyIsDown(83)) -
     (keyIsDown(UP_ARROW) || keyIsDown(87));
 
-  // Cheap diagonal normalization so diagonals aren’t faster
-  const len = max(1, abs(dx) + abs(dy));
+  // soft acceleration
+  vx += dx * 0.2;
+  vy += dy * 0.2;
 
-  // Move player in WORLD space (no bounds in Example 1)
-  player.x += (dx / len) * player.s;
-  player.y += (dy / len) * player.s;
+  // friction (gliding stop)
+  vx *= 0.92;
+  vy *= 0.92;
 
-  // ---------- 2) UPDATE VIEW STATE (CAMERA) ----------
-  // Center camera on player (NO constrain / bounds here)
-  cam.x = player.x - width / 2;
-  cam.y = player.y - height / 2;
+  player.x += vx;
+  player.y += vy;
 
-  // ---------- 3) DRAW ----------
-  background(220);
+  // ---------- 2) UPDATE CAMERA (VIEW STATE) ----------
 
-  // Draw the WORLD (scrolling layer) in world space
+  let targetX = player.x - width / 2;
+  let targetY = player.y - height / 2;
+
+  cam.x += (targetX - cam.x) * 0.05;
+  cam.y += (targetY - cam.y) * 0.05;
+
+  // ---------- 3) DRAW GRADIENT (SCREEN SPACE) ----------
+
+  let d = dist(player.x, player.y, 300, 300);
+  let targetMood = map(d, 0, 2000, 0, 1, true);
+  mood = lerp(mood, targetMood, 0.02);
+
+  let lightTop = color(200, 230, 255);
+  let lightBottom = color(160, 200, 255);
+
+  let darkTop = color(20, 40, 90);
+  let darkBottom = color(5, 10, 40);
+
+  let topColor = lerpColor(lightTop, darkTop, mood);
+  let bottomColor = lerpColor(lightBottom, darkBottom, mood);
+
+  drawGradient(topColor, bottomColor);
+
+  // ---------- 4) DRAW WORLD (SCROLLING LAYER) ----------
+
   push();
   translate(-cam.x, -cam.y);
 
-  // World background rectangle (so you can see the “world area”)
-  noStroke();
-  fill(235);
+  // subtle world overlay so gradient shows through
+  fill(255, 20);
   rect(0, 0, WORLD_W, WORLD_H);
 
-  // Grid lines make camera motion easy to see
-  stroke(245);
-  for (let x = 0; x <= WORLD_W; x += 160) line(x, 0, x, WORLD_H);
-  for (let y = 0; y <= WORLD_H; y += 160) line(0, y, WORLD_W, y);
+  // grid fades with distance
+  let gridAlpha = map(mood, 0, 1, 60, 10);
+  stroke(255, gridAlpha);
 
-  // Obstacles (static world features)
-  noStroke();
-  fill(170, 190, 210);
-  for (let i = 0; i < 30; i++) {
-    const x = (i * 280) % WORLD_W;
-    const y = (i * 180) % WORLD_H;
-    rect(x + 40, y + 40, 80, 80, 10);
+  for (let x = 0; x <= WORLD_W; x += 160) {
+    line(x, 0, x, WORLD_H);
+  }
+  for (let y = 0; y <= WORLD_H; y += 160) {
+    line(0, y, WORLD_W, y);
   }
 
-  // Player (in world space)
-  fill(50, 110, 255);
-  rect(player.x - 12, player.y - 12, 24, 24, 5);
+  noStroke();
+
+  // drifting particles
+  for (let i = 0; i < 40; i++) {
+    let px = (frameCount * 0.2 + i * 200) % WORLD_W;
+    let py = (i * 130) % WORLD_H;
+    fill(200, 220, 255, 25);
+    ellipse(px, py, 4);
+  }
+
+  // memory fragments
+  textAlign(CENTER);
+  for (let m of memories) {
+    let md = dist(player.x, player.y, m.x, m.y);
+    let alpha = map(md, 300, 0, 0, 255, true);
+    fill(255, alpha);
+    text(m.text, m.x, m.y);
+  }
+
+  // player
+  fill(100, 160, 255);
+  ellipse(player.x, player.y, 20);
 
   pop();
 
-  // HUD (screen space): drawn AFTER pop(), so it does not move with camera
-  noStroke();
-  fill(20);
-  text("Week 5 — Centered camera (no bounds). WASD/Arrows to move.", 12, 20);
-  text(
-    "Player(world): " +
-      (player.x | 0) +
-      ", " +
-      (player.y | 0) +
-      "   Cam(world): " +
-      (cam.x | 0) +
-      ", " +
-      (cam.y | 0),
-    12,
-    40,
-  );
+  // ---------- 5) HUD (SCREEN SPACE) ----------
+
+  fill(255);
+  textAlign(LEFT);
+  text("Drifting Through Memory — WASD / Arrows to move", 20, 30);
+}
+
+// ---------- GRADIENT FUNCTION ----------
+
+function drawGradient(topColor, bottomColor) {
+  for (let y = 0; y < height; y++) {
+    let t = y / height;
+    let c = lerpColor(topColor, bottomColor, t);
+    stroke(c);
+    line(0, y, width, y);
+  }
 }

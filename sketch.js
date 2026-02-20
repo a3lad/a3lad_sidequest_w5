@@ -28,10 +28,12 @@ let vy = 0;
 let mood = 0; // smoothed day → night value
 
 let memories = [
-  { x: 500, y: 400, text: "I remember the quiet." },
-  { x: 1200, y: 700, text: "It felt warmer then." },
-  { x: 1800, y: 300, text: "I stayed longer than I should have." },
-  { x: 2100, y: 1200, text: "Some things never return." },
+  { x: 400, y: 350, text: "It was clearer before." },
+  { x: 900, y: 500, text: "The details blur now." },
+  { x: 1300, y: 800, text: "Was it really that blue?" },
+  { x: 1600, y: 400, text: "I try to remember your voice." },
+  { x: 2000, y: 900, text: "Some things dissolve quietly." },
+  { x: 2200, y: 1200, text: "I’m not sure what was real anymore." },
 ];
 
 function setup() {
@@ -103,6 +105,7 @@ function draw() {
     ellipse(px, py, 4);
   }
 
+  // memories and pulses
   for (let m of memories) {
     let md = dist(player.x, player.y, m.x, m.y);
 

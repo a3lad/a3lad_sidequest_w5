@@ -1,18 +1,3 @@
-/*
-Week 5 — Example 1: Top-Down Camera Follow (Centered, No Bounds)
-
-Course: GBDA302 | Instructors: Dr. Karen Cochrane & David Han
-Date: Feb. 12, 2026
-
-Move: WASD/Arrows
-
-Goal:
-- Keep player position in world space
-- Compute a camera offset from the player (view state)
-- Draw world using translate(-cam.x, -cam.y)
-- Draw HUD in screen space (no translate)
-*/
-
 let player = { x: 300, y: 300, s: 1.2 };
 let cam = { x: 0, y: 0 };
 
@@ -55,12 +40,12 @@ function draw() {
     (keyIsDown(UP_ARROW) || keyIsDown(87));
 
   // soft acceleration
-  vx += dx * 0.2;
-  vy += dy * 0.2;
+  vx += dx * 0.3;
+  vy += dy * 0.3;
 
   // friction (gliding stop)
-  vx *= 0.92;
-  vy *= 0.92;
+  vx *= 0.9;
+  vy *= 0.9;
 
   player.x += vx;
   player.y += vy;
@@ -96,14 +81,6 @@ function draw() {
   translate(-cam.x, -cam.y);
 
   noStroke();
-
-  // drifting particles
-  for (let i = 0; i < 40; i++) {
-    let px = (frameCount * 0.2 + i * 200) % WORLD_W;
-    let py = (i * 130) % WORLD_H;
-    fill(200, 220, 255, 25);
-    ellipse(px, py, 4);
-  }
 
   // memories and pulses
   for (let m of memories) {
